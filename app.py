@@ -6,6 +6,7 @@ import csv
 import io
 import json
 import math
+import os
 import platform
 import random
 import secrets
@@ -285,7 +286,7 @@ class Handler(BaseHTTPRequestHandler):
             revision = parse_qs(urlparse(self.path).query).get('revision', [''])[0]
             since = int(revision) if revision.isdigit() else None
             return self.reply(200, dict(**self.server.workbench.snapshot(since), token=self.server.token,
-                              platform=platform.machine(), tools={name: bool(shutil.which(name)) for name in ("rtl_power", "rtl_433", "rnsd", "direwolf")}))
+                              platform=platform.machine(), portable=bool(os.environ.get('SIGNALPIER_PORTABLE')), tools={name: bool(shutil.which(name)) for name in ("rtl_power", "rtl_433", "rnsd", "direwolf")}))
         if path == "/api/export":
             return self.reply(200, self.server.workbench.snapshot())
         if path == "/api/spaceweather":
@@ -317,7 +318,21 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length) or b"{}")
             if not isinstance(data, dict):
                 raise ValueError("Expected a JSON object.")
-            if self.path == "/api/start":
+            if self.path == '/api/quit' and os.environ.get('SIGNALPIER_PORTABLE'):
+                if installer_status().get('status') in ('queued','installing'):
+                    raise RuntimeError('Wait for the update to finish.')
+                self.reply(200, {'ok':True})
+                threading.Thread(target=self.server.shutdown,daemon=True).start()
+                return
+            if self.path == '/api/usb/setup' and os.environ.get('SIGNALPIER_PORTABLE'):
+                if self.server.workbench.snapshot()['status']=='running':
+                    raise RuntimeError('Stop the capture first.')
+                if not shutil.which('pkexec'):
+                    raise ValueError('This desktop has no administrator prompt. See the receiver setup guide.')
+                result=subprocess.run(['pkexec','/bin/sh','-c','install -m 644 "$1" /etc/udev/rules.d/60-signalpier-rtlsdr.rules && udevadm control --reload-rules','signalpier-usb',str(Path(__file__).parent/'rtl-sdr.rules')],capture_output=True,text=True,timeout=120)
+                if result.returncode:
+                    raise ValueError('USB setup was canceled or failed. You can continue using the app.')
+            elif self.path == "/api/start":
                 if installer_status().get('status') in ('queued','installing'):
                     raise RuntimeError('Wait for the update to finish before starting a capture.')
                 self.server.workbench.start(data)
@@ -332,6 +347,8 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 return self.reply(404, {"error": "Not found"})
             self.reply(200, {"ok": True})
+        except subprocess.TimeoutExpired:
+            self.reply(408, {'error':'The administrator prompt timed out. Try again when ready.'})
         except RuntimeError as exc:
             self.reply(409, {"error": str(exc)})
         except (ValueError, TypeError) as exc:

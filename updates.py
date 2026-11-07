@@ -14,6 +14,9 @@ STATE=Path('/var/lib/signalpier')
 
 
 def installer_status():
+    if os.environ.get('SIGNALPIER_PORTABLE'):
+        from portable_update import status
+        return status()
     supported=Path('/usr/lib/signalpier/install-update.py').is_file() and STATE.is_dir()
     try:
         status=json.loads((STATE/'update-status.json').read_text()[:4000])
@@ -25,6 +28,9 @@ def installer_status():
 
 
 def request_install():
+    if os.environ.get('SIGNALPIER_PORTABLE'):
+        from portable_update import request_install as portable_install
+        return portable_install()
     status=installer_status()
     if not status['supported']:
         raise ValueError('Automatic installation is available in the Raspberry Pi .deb package.')
@@ -58,9 +64,11 @@ class UpdateChecker:
                 if len(data)>100000: raise ValueError('Update response too large')
                 manifest=json.loads(data)
                 latest=str(manifest['version'])
-                url=str(manifest['installer']['url'])
-                digest=str(manifest['installer']['sha256'])
-                if not url.startswith(DOWNLOAD_PREFIX) or not url.endswith('_arm64.deb'):
+                item=manifest['appimage' if os.environ.get('SIGNALPIER_PORTABLE') else 'installer']
+                url=str(item['url'])
+                digest=str(item['sha256'])
+                suffix='-aarch64.AppImage' if os.environ.get('SIGNALPIER_PORTABLE') else '_arm64.deb'
+                if not url.startswith(DOWNLOAD_PREFIX) or not url.endswith(suffix):
                     raise ValueError('Unsupported download URL')
                 if not re.fullmatch('[a-f0-9]{64}',digest): raise ValueError('Invalid checksum')
                 newer=version_key(latest)>version_key(VERSION)

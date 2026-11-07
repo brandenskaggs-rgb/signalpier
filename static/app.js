@@ -1,6 +1,6 @@
 'use strict';
 const $ = id => document.getElementById(id);
-let token = '', state = null, lastSignature = '', activePanel = 'receiver', firstRefresh = true;
+let token = '', state = null, lastSignature = '', activePanel = 'receiver', firstRefresh = true, appClosed = false;
 function sourceLabel() {
   $('source').textContent = activePanel === 'receiver' ? (state?.mode === 'hardware' ? 'HARDWARE · RECEIVED DATA' : 'DEMO · SYNTHETIC DATA') : ({hamclock:'CLOCK · CALCULATED + NOAA',encryption:'LOCAL · AES-256-GCM',projects:'STATION SETTINGS'}[activePanel]);
 }
@@ -107,9 +107,12 @@ $('spectrum').addEventListener('pointermove',event=>{
 async function refresh() {
   try {
     const update=await api('/api/status'+(state ? '?revision='+state.revision : ''));
+    if(appClosed)return;
     state=update.unchanged ? {...state,...update} : update;token=state.token;
     if(firstRefresh && state.config){for(const [key,value] of Object.entries(state.config)){if($(key))$(key).value=value;}$('kind').dispatchEvent(new Event('change'));}firstRefresh=false;
     $('connection').textContent=`Local station · ${state.platform}`;
+    $('quit-app').hidden=!state.portable;
+    $('usb-setup').hidden=!state.portable;
     sourceLabel();
     $('job-status').textContent=state.status.toUpperCase();
     const running=state.status==='running';$('start').disabled=running;$('stop').disabled=!running;
@@ -123,9 +126,9 @@ async function refresh() {
       for(const [name,installed]of Object.entries(state.tools)){const li=node('li',name);li.append(node('span',installed?'available':'not installed'));list.append(li);}
       renderResults();draw();
     }
-  } catch(error){$('connection').textContent='Station offline';notice('Cannot reach the local server. Start app.py and refresh.',true);}
+  } catch(error){if(appClosed)return;$('connection').textContent='Station offline';notice('Cannot reach the local server. Open SignalPier again and refresh.',true);}
 }
-async function poll(){await refresh();setTimeout(poll,1000);}poll();draw();
+async function poll(){if(appClosed)return;await refresh();if(!appClosed)setTimeout(poll,1000);}poll();draw();
 function cryptoNotice(text){$('crypto-status').textContent=text;}
 $('generate').addEventListener('click',()=>{
   if(!globalThis.crypto?.subtle){cryptoNotice('Use http://localhost or an SSH tunnel so browser encryption is available.');return;}
@@ -151,9 +154,12 @@ $('preferences-form').addEventListener('submit',event=>{event.preventDefault();c
 
 let updateInfo=null, installingUpdate=false, updateTimer=null, dismissedVersion='';
 async function checkUpdates(){
+  if(appClosed)return;
   try{
     const info=await api('/api/update');updateInfo=info;
+    if(appClosed)return;
     const status=info.installer?.status;
+    if(status==='complete' && info.installer.restart_required){installingUpdate=false;$('update-notice').hidden=false;$('update-title').textContent='Update installed';$('update-message').textContent=info.installer.message;$('install-update').disabled=true;return;}
     if(installingUpdate && status==='complete'){location.reload();return;}
     if(status==='queued'||status==='installing')installingUpdate=true;
     if(status==='error'){installingUpdate=false;$('update-notice').hidden=false;$('update-title').textContent='Update could not finish';$('update-message').textContent=info.installer.message;$('install-update').disabled=false;}
@@ -170,3 +176,5 @@ $('install-update').addEventListener('click',async()=>{
 $('dismiss-update').addEventListener('click',()=>{dismissedVersion=updateInfo?.latest||'';$('update-notice').hidden=true;});
 window.addEventListener('online',()=>{clearTimeout(updateTimer);updateTimer=setTimeout(checkUpdates,1000);});
 checkUpdates();
+$('quit-app').addEventListener('click',async()=>{try{await api('/api/quit',{});appClosed=true;clearTimeout(updateTimer);for(const element of document.body.children)element.hidden=true;document.body.append(node('p','SignalPier is closed. You can close this window.'));}catch(error){notice(error.message,true);}});
+$('usb-setup').addEventListener('click',async()=>{const button=$('usb-setup');button.disabled=true;$('usb-status').textContent='Approve the administrator prompt to enable receiver access.';try{await api('/api/usb/setup',{});$('usb-status').textContent='Receiver access enabled. Unplug and reconnect the SDR, then try Hardware mode.';}catch(error){$('usb-status').textContent=error.message;}finally{button.disabled=false;}});

@@ -8,18 +8,22 @@ SignalPier is **an application, not an operating system**. Install it on your ex
 
 ## Install on Raspberry Pi 3
 
-Requires **64-bit Raspberry Pi OS**, Python 3.10+, and an internet connection for missing system dependencies. Primary hardware target: Pi 3 Model B/B+ with 1 GB RAM.
+Requires **64-bit Raspberry Pi OS Bookworm or newer**, with its system Python 3.10+. Primary hardware target: Pi 3 Model B/B+ with 1 GB RAM. A desktop browser displays the dashboard.
 
-1. Open the website on your Pi and click **Download for Raspberry Pi 3**.
-2. Open the `.deb` with the system's software installer. If no graphical installer is available, open a terminal in Downloads and run:
+1. Open the website on your Pi and click **Download AppImage for Pi 3**.
+2. Right-click the downloaded file → Properties → Permissions → allow execution as a program.
+3. Double-click it. SignalPier opens its dashboard and adds an application-menu shortcut.
+
+Terminal equivalent:
 
 ```bash
-sudo apt install ./signalpier_0.1.0-alpha.1_arm64.deb
+chmod +x SignalPier-0.1.0-alpha.2-aarch64.AppImage
+./SignalPier-0.1.0-alpha.2-aarch64.AppImage
 ```
 
-3. Launch **SignalPier** from the application menu or open **http://127.0.0.1:8765** on the Pi.
+The AppImage includes `rtl_power`, `rtl_433` and their receiver libraries. First launch copies the app to `~/.local/share/signalpier/SignalPier.AppImage`; subsequent launches use the menu shortcut. It runs as your user. Choose **Quit SignalPier** in the dashboard to stop it. If receiver access is denied, **Settings → Enable USB receiver access** requests administrator permission to add the bundled RTL-SDR USB rules; reconnect the dongle afterward.
 
-The installer starts an unprivileged background service and installs the receiver utilities through your OS package manager. It does not change your Wi-Fi or replace your OS. Uninstall with `sudo apt remove signalpier`.
+If FUSE is unavailable, launch with `--appimage-extract-and-run`. The AppImage handles extraction internally. To remove SignalPier, quit it and delete `~/.local/share/signalpier` and `~/.local/share/applications/signalpier.desktop`. The `.deb` remains an optional alternative for service-based installations.
 
 ### Using your laptop's screen
 
@@ -29,7 +33,7 @@ On the laptop:
 ssh -N -L 8765:127.0.0.1:8765 YOUR_USER@YOUR_PI
 ```
 
-Keep the tunnel open and browse to http://127.0.0.1:8765. The Pi handles reception; your laptop renders the interface. A local server must not already occupy that port.
+Start the AppImage on the Pi with `--no-browser`. Keep the tunnel open and browse to http://127.0.0.1:8765. The Pi handles reception; your laptop renders the interface. If the Pi's port is occupied, SignalPier prints its chosen port; adjust the tunnel accordingly.
 
 ## What works in this alpha
 
@@ -54,13 +58,13 @@ RTL-SDR Blog V3 is receive-only. Transmitting and programming handheld/mobile ra
 - Plots capped at 30 sweeps and 1,024 peak-preserving bins per sweep. Export contains this reduced plot data; it is not a raw IQ recording.
 - Status polling returns a small response when data hasn't changed.
 - Charts, map shading and encryption run in the browser.
-- The service has a 160 MB memory-pressure threshold and 256 MB hard memory limit.
+- The optional Debian service has a 160 MB memory-pressure threshold and 256 MB hard memory limit. These systemd limits do not apply to the user-run AppImage.
 
-These are configured constraints, not a guarantee of particular RF throughput. Raspberry Pi OS's packaged receiver drivers determine model support; older `librtlsdr` packages may need replacement for RTL-SDR Blog V4. Do not assume that every SDR, protocol, or frequency is supported.
+These are configured constraints, not a guarantee of particular RF throughput. The AppImage bundles the Bookworm RTL-SDR driver for standard RTL2832U receivers including Blog V3; Blog V4 is not supported by this build. Do not assume that every SDR, protocol, or frequency is supported.
 
 ## Validation
 
-See [the validation report](docs/validation.json). Tests were run on Windows and inside an ARM64 Raspberry Pi OS userspace under QEMU. The actual ARM64 `rtl_433` binary decoded a pinned recorded Acurite IQ sample, and the unprivileged ARM64 server/capture pipeline passed.
+See [the validation report](docs/validation.json). The ARM64 AppImage was launched under QEMU with extract-and-run. User-owned installation, menu shortcut, bundled receiver-tool availability, demo capture, update support and Quit passed. Unit and browser tests also cover AppImage update replacement and its user interface. The actual ARM64 `rtl_433` binary decoded a pinned recorded Acurite IQ sample, and the unprivileged ARM64 server/capture pipeline passed.
 
 **Physical Pi 3 boot, USB reception, thermal behavior, power stability, and sustained RF performance remain unverified.** This release is explicitly an alpha. The desktop installer integration also needs a physical Pi desktop check.
 
@@ -72,7 +76,7 @@ python3 app.py
 
 Open http://127.0.0.1:8765. The clock, encryption lab and demo work without receiver executables. Linux users can alternatively install from source with `sudo bash scripts/install.sh`.
 
-The automatic installer is included only in the `.deb` package. Source installations must be updated manually. The packaged updater downloads only this project's release, verifies its checksum and package identity, and installs it through APT.
+Both the AppImage and optional `.deb` support online update notices. In the AppImage, **Install update** downloads and verifies the new ARM64 AppImage, then atomically replaces the user-owned installed copy. Quit and reopen from the menu after installation. No update runs until you click. Source installations are updated manually; the `.deb` updater uses APT.
 
 ## Develop and package
 
@@ -82,6 +86,8 @@ node --test tests/crypto.test.cjs tests/solar.test.cjs
 python3 scripts/build_site.py
 python3 scripts/package.py
 bash scripts/build-deb.sh
+# Linux build with a prepared Bookworm ARM64 sysroot:
+python3 scripts/build-appimage.py /path/to/arm64-sysroot
 ```
 
 Node/Playwright are development-only dependencies. `npm ci` prepares browser checks; install a Playwright browser or set `BROWSER_CHANNEL=msedge`. Start the app on port 8766 and the static site on 8780 before `npm run test:browser`.

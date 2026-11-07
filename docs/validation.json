@@ -1,15 +1,16 @@
 {
-  "release": "0.1.0-alpha.1",
+  "release": "0.1.0-alpha.2",
   "date": "2026-11-07",
   "status": "alpha; physical hardware acceptance pending",
   "verified": {
-    "python": "23 unit tests passed on Windows and ARM64 userspace under QEMU",
+    "python": "26 unit tests passed on Windows; 23 core tests previously passed in ARM64 userspace under QEMU",
     "javascript": "7 crypto and solar tests passed",
-    "browser": "Desktop/mobile website and dashboard checks passed using Playwright with Microsoft Edge",
+    "browser": "Desktop/mobile website and dashboard checks passed; mocked AppImage update notice, user-started installation, reopen instruction and Quit UI passed in Microsoft Edge",
     "package": "ARM64 .deb installed in emulated Raspberry Pi OS userspace; unprivileged HTTP API and update helper registration verified",
     "services": "systemd-analyze verify passed for application and update units",
     "decoder": "ARM64 rtl_433 22.11-1 decoded a recorded Acurite-00275rm sample",
-    "updater": "Mocked manifest, installation and tamper rejection tests passed; live systemd-triggered upgrade not yet verified"
+    "updater": "AppImage checksum/tamper rejection and atomic replacement unit tests passed; new AppImage installation requires quit/reopen. End-to-end update on physical Pi remains pending.",
+    "appimage": "ARM64 type-2 AppImage executed under QEMU using extract-and-run: user-owned installation, menu shortcut, bundled tool availability, HTTP API, demo capture, update support and Quit passed"
   },
   "fixture": {
     "url": "https://raw.githubusercontent.com/merbanan/rtl_433_tests/1aa8c29d6b9383739d1aeed495dbc5069b704392/tests/acurite/Acurite_00275rm/ext.cu8",
@@ -20,7 +21,13 @@
     "Physical Pi 3 installation and graphical desktop launcher",
     "USB receiver detection and over-the-air reception on physical Pi 3",
     "Thermal, power and sustained RF performance",
-    "End-to-end update installation on a running physical Pi"
+    "End-to-end update installation on a running physical Pi",
+    "Default FUSE-mounted AppImage launch on physical Pi desktop; emulation tests use extract-and-run"
   ],
-  "not_included": ["Radio transmission", "Handheld/mobile radio programming", "P25 voice decoding", "Over-the-air encrypted messaging"]
+  "not_included": [
+    "Radio transmission",
+    "Handheld/mobile radio programming",
+    "P25 voice decoding",
+    "Over-the-air encrypted messaging"
+  ]
 }

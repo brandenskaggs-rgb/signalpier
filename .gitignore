@@ -6,6 +6,7 @@ dist/
 *.log
 *.img
 *.img.xz
+*.AppImage
 *.zip
 *.tar.gz
 image/work/
