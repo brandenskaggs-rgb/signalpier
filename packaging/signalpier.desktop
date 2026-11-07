@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SignalPier
+Comment=Open the radio workbench and station clock
+Exec=signalpier
+Icon=signalpier
+Terminal=false
+Categories=Utility;HamRadio;
+StartupNotify=false

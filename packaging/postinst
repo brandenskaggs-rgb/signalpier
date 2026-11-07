@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+if [ "$1" = configure ]; then
+  getent group plugdev >/dev/null || addgroup --system plugdev
+  id signalpier >/dev/null 2>&1 || adduser --system --group --home /opt/signalpier --no-create-home signalpier
+  adduser signalpier plugdev >/dev/null
+  install -d -o signalpier -g signalpier -m 0750 /var/lib/signalpier
+  if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemctl enable signalpier.service
+    systemctl enable --now signalpier-update.path
+    systemctl restart signalpier.service
+  else
+    mkdir -p /etc/systemd/system/multi-user.target.wants
+    ln -sf /lib/systemd/system/signalpier.service /etc/systemd/system/multi-user.target.wants/signalpier.service
+    ln -sf /lib/systemd/system/signalpier-update.path /etc/systemd/system/multi-user.target.wants/signalpier-update.path
+  fi
+fi

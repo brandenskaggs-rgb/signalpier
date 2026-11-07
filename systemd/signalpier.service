@@ -1,0 +1,27 @@
+[Unit]
+Description=SignalPier radio workbench
+After=network.target
+
+[Service]
+Type=simple
+User=signalpier
+Group=signalpier
+SupplementaryGroups=plugdev
+WorkingDirectory=/opt/signalpier
+ExecStart=/usr/bin/python3 /opt/signalpier/app.py
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+UMask=0077
+StateDirectory=signalpier
+StateDirectoryMode=0750
+MemoryHigh=160M
+MemoryMax=256M
+TasksMax=32
+
+[Install]
+WantedBy=multi-user.target

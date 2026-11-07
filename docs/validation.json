@@ -1,0 +1,26 @@
+{
+  "release": "0.1.0-alpha.1",
+  "date": "2026-11-07",
+  "status": "alpha; physical hardware acceptance pending",
+  "verified": {
+    "python": "23 unit tests passed on Windows and ARM64 userspace under QEMU",
+    "javascript": "7 crypto and solar tests passed",
+    "browser": "Desktop/mobile website and dashboard checks passed using Playwright with Microsoft Edge",
+    "package": "ARM64 .deb installed in emulated Raspberry Pi OS userspace; unprivileged HTTP API and update helper registration verified",
+    "services": "systemd-analyze verify passed for application and update units",
+    "decoder": "ARM64 rtl_433 22.11-1 decoded a recorded Acurite-00275rm sample",
+    "updater": "Mocked manifest, installation and tamper rejection tests passed; live systemd-triggered upgrade not yet verified"
+  },
+  "fixture": {
+    "url": "https://raw.githubusercontent.com/merbanan/rtl_433_tests/1aa8c29d6b9383739d1aeed495dbc5069b704392/tests/acurite/Acurite_00275rm/ext.cu8",
+    "sha256": "5114c22cef41888d8e93a1fde4cb77fff6eab408e295454a28ad0d505c8893fd",
+    "redistributed": false
+  },
+  "pending": [
+    "Physical Pi 3 installation and graphical desktop launcher",
+    "USB receiver detection and over-the-air reception on physical Pi 3",
+    "Thermal, power and sustained RF performance",
+    "End-to-end update installation on a running physical Pi"
+  ],
+  "not_included": ["Radio transmission", "Handheld/mobile radio programming", "P25 voice decoding", "Over-the-air encrypted messaging"]
+}

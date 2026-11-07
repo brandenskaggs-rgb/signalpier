@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SignalPier / Radio Workbench</title><link rel="stylesheet" href="/style.css">
+  <script src="/crypto.js" defer></script><script src="/solar.js" defer></script><script src="/app.js" defer></script><script src="/hamclock.js" defer></script>
+</head>
+<body>
+  <header><div class="brand"><span class="mark" aria-hidden="true">▥</span><div>SIGNALPIER<small>Radio workbench / Pi 3 edition</small></div></div><div class="connection"><span id="connection">Connecting</span><span class="tag" id="source">DEMO · SYNTHETIC DATA</span></div></header>
+  <main>
+    <aside id="update-notice" class="update-notice" hidden role="status"><div><strong id="update-title">Update available</strong><span id="update-message">Your station keeps working. Install when you're ready.</span></div><button id="install-update" class="primary" type="button">Install update</button><button id="dismiss-update" type="button">Later</button></aside>
+    <div class="intro"><div><p class="eyebrow">THE RECEIVER DESK</p><h1>Find a signal.<br><span>See what it carries.</span></h1></div><p class="intro-copy">Sweep a band, inspect supported sensor packets, and experiment with authenticated encryption. Start in demo mode; connect a receiver when you're ready.</p></div>
+    <nav aria-label="Workbench sections"><button class="tab active" data-panel="receiver" aria-selected="true">Spectrum</button><button class="tab" data-panel="hamclock" aria-selected="false">Station clock</button><button class="tab" data-panel="encryption" aria-selected="false">Encryption lab</button><button class="tab" data-panel="projects" aria-selected="false">Settings</button></nav>
+    <section id="receiver" class="panel">
+      <div class="desk">
+        <aside class="controls"><div class="section-heading"><h2>Receiver</h2><span class="tiny">RX ONLY</span></div>
+          <form id="capture-form">
+            <label>Signal source<select id="mode"><option value="demo">Demo · simulated signals</option><option value="hardware">Hardware · USB RTL-SDR</option></select></label>
+            <label>Task<select id="kind"><option value="scan">Spectrum sweep</option><option value="decode">Decode sensor packets</option></select></label>
+            <div id="scan-fields"><div class="field-pair"><label>From / MHz<input id="start_mhz" type="number" value="430" min="24" max="1766" step="0.001" required></label><label>To / MHz<input id="end_mhz" type="number" value="440" min="24" max="1766" step="0.001" required></label></div><label>Maximum bin / kHz<select id="bin_khz"><option value="10">10 · finer detail</option><option value="25" selected>25 · balanced</option><option value="100">100 · wider survey</option></select></label></div>
+            <div id="decode-fields" hidden><label>Listen frequency / MHz<input id="frequency_mhz" type="number" value="433.92" min="24" max="1766" step="0.001" required></label><p class="help">Decodes protocols supported by rtl_433, such as compatible weather sensors. It does not identify every signal or decrypt encrypted radio traffic.</p></div>
+            <div class="field-pair"><label>Capture / seconds<input id="duration" type="number" value="10" min="2" max="60" required></label><label>USB index<input id="device" type="number" value="0" min="0" max="99" required></label></div>
+            <button class="primary" id="start" type="submit">Start capture <span aria-hidden="true">↗</span></button>
+            <button id="stop" type="button" disabled>Stop capture</button>
+          </form>
+          <p class="help">One task owns the receiver at a time. Stop SDR++ before using the same dongle here. Hardware results appear after the capture finishes.</p>
+          <div class="tools"><h3>Installed tools</h3><ul id="tools"></ul></div>
+        </aside>
+        <div class="instrument">
+          <div class="instrument-head"><div><p class="eyebrow">SPECTRUM / RECEIVE POWER</p><h2 id="band-title">430.000 — 440.000 <small>MHz</small></h2></div><span class="tag" id="job-status">IDLE</span></div>
+          <div class="scope"><canvas id="spectrum" width="1000" height="250" aria-label="Spectrum plot: relative receiver power by frequency"></canvas><div class="scope-legend"><span>Relative dB · uncalibrated</span><span id="cursor">Run a capture to inspect signals</span></div><canvas id="waterfall" width="1000" height="180" aria-label="Waterfall of captured spectrum rows, newest at bottom"></canvas><div class="scope-legend"><span>CAPTURE HISTORY ↓</span><span>low <i class="color-scale"></i> high</span></div></div>
+          <div class="status-line" id="message" role="status" aria-live="polite">Choose a task and start a capture.</div>
+          <div class="results-head"><h2 id="results-title">Signal candidates</h2><button id="export" disabled>Export capture ↓</button></div>
+          <p class="help" id="results-help">Peaks above the median noise estimate. A peak is a candidate, not a protocol identification.</p>
+          <div id="results" class="results"><p class="empty">Your first capture will appear here.</p></div>
+        </div>
+      </div>
+    </section>
+    <section id="hamclock" class="panel" hidden>
+      <div class="clock-heading"><div><p class="eyebrow">STATION CLOCK / WORLD CONDITIONS</p><h2 id="station-title">Your station</h2><p id="station-position" class="help">Set your locator for solar times and a DX bearing.</p></div><button id="fullscreen">Station fullscreen ↗</button></div>
+      <div class="clock-layout"><div class="world-panel"><canvas id="world-map" width="1000" height="500" aria-label="World map with calculated sunlight, twilight, and station locations"></canvas><div class="world-caption"><span>Daylight · twilight · night</span><span id="map-time">Calculating sun position…</span></div><p class="help">Approximate solar geometry, refreshed each minute. Shading shows sunlight, not propagation. Map: Natural Earth, public domain.</p></div>
+      <div class="time-panel"><p class="eyebrow">UNIVERSAL TIME / UTC</p><output id="utc-clock" class="big-clock">--:--:--</output><div id="utc-date" class="clock-date"></div><div class="local-clock-row"><span id="local-zone">Local time</span><output id="local-clock">--:--:--</output></div><dl class="solar-readings"><dt>Sun at station</dt><dd id="sun-altitude">Set locator</dd><dt>Next sunrise / UTC</dt><dd id="sunrise">—</dd><dt>Next sunset / UTC</dt><dd id="sunset">—</dd><dt>DX distance / short path</dt><dd id="dx-distance">Set both locators</dd><dt>DX initial bearing / true</dt><dd id="dx-bearing">—</dd></dl><p class="help">Clock uses this device's time. Solar events use the locator center and a standard horizon; terrain and weather can shift observed times.</p></div></div>
+      <div class="clock-bottom"><form id="station-form" class="station-settings"><h3>Station settings</h3><div class="station-fields"><label>Callsign<input id="callsign" maxlength="20" placeholder="Your callsign" autocomplete="off"></label><label>Home locator<input id="home-grid" maxlength="8" placeholder="EN61…" autocomplete="off"></label><label>DX locator<input id="dx-grid" maxlength="8" placeholder="IO91wm" autocomplete="off"></label></div><button class="primary" type="submit">Save station</button><p id="station-message" class="help" role="status">Saved only in this browser. Location is not sent to NOAA.</p></form>
+      <div class="space-panel"><div class="section-heading"><h3>Space weather</h3><button id="refresh-weather">Fetch NOAA readings ↻</button></div><div class="weather-values"><div><span>Planetary Kp</span><output id="kp-value">—</output><small id="kp-time">Not fetched</small></div><div><span>10.7 cm solar flux / sfu</span><output id="flux-value">—</output><small id="flux-time">Not fetched</small></div></div><p id="weather-message" class="help" role="status">Internet optional. NOAA readings are fetched on request and cached for 10 minutes. These measurements are not a band-opening forecast.</p></div></div>
+    </section>
+    <section id="encryption" class="panel" hidden>
+      <div class="lab-intro"><p class="eyebrow">LOCAL EXPERIMENT / AES-256-GCM</p><h2>Seal a message. Verify it survived.</h2><p>Real authenticated encryption inside your browser. Keys and plaintext are not sent to the server or saved by this app. This lab does not transmit over radio or configure your radio's keys.</p></div>
+      <div class="lab-grid"><div class="lab-card"><label>Shared key / Base64<input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="Generate a key or paste a 32-byte key"></label><div class="button-row"><button id="generate">Generate key</button><button id="reveal">Show key</button></div><label>Plaintext<textarea id="plaintext" rows="6" placeholder="Write a test message…">Field station check. Receiver ready.</textarea></label><button id="encrypt" class="primary">Encrypt message →</button><p class="help">A fresh random 96-bit nonce is generated for every message. Keep the key separate from the envelope. This lab has no key exchange or replay protection.</p></div>
+      <div class="lab-card"><label>Encrypted envelope<textarea id="envelope" rows="11" spellcheck="false" placeholder="The encrypted envelope will appear here. You can paste one from another session."></textarea></label><div class="button-row"><button id="decrypt" class="primary">Verify & decrypt</button><button id="save-envelope">Save envelope ↓</button></div><label>Verified plaintext<output id="decrypted">No message verified yet.</output></label><p id="crypto-status" role="status" aria-live="polite">Generate a key to begin. Refreshing clears the session.</p></div></div>
+    </section>
+    <section id="projects" class="panel" hidden>
+      <div class="lab-intro"><p class="eyebrow">SETTINGS / YOUR RECEIVER DESK</p><h2>Keep your station simple.</h2><p>Save a preferred receiver index and capture length. Callsign and locator settings are on the Station clock tab.</p></div>
+      <div class="lab-grid"><form id="preferences-form" class="lab-card"><h3>Capture defaults</h3><p class="help">Saved in this browser. These never start a receiver automatically.</p><label>Default USB receiver index<input id="default-device" type="number" min="0" max="99" value="0" required></label><label>Default capture length / seconds<input id="default-duration" type="number" min="2" max="60" value="10" required></label><button class="primary" type="submit">Save defaults</button><p id="preferences-message" class="help" role="status">Demo mode is the initial source.</p></form>
+      <div class="lab-card"><h3>Connect a receiver</h3><p class="help">Connect a supported RTL-SDR receiver and antenna to the Pi. Stop any other program using it, then select Hardware on the Spectrum tab.</p><p class="help">Packet decoding supports the protocols included in rtl_433. A signal may be visible without having a supported decoder.</p><h3>Help and updates</h3><p><a href="https://brandenskaggs-rgb.github.io/signalpier/guide.html" target="_blank" rel="noreferrer">Setup guide ↗</a></p><p><a href="https://github.com/brandenskaggs-rgb/signalpier/releases" target="_blank" rel="noreferrer">Downloads and release notes ↗</a></p></div></div>
+    </section>
+  </main>
+  <footer><span>SIGNALPIER / v0.1 ALPHA</span><span>Local first · no cloud services · no radio transmission in this build</span></footer>
+</body></html>

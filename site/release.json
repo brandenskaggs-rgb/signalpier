@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0-alpha.1",
+  "date": "2026-11-07",
+  "installer": {
+    "url": "https://github.com/brandenskaggs-rgb/signalpier/releases/download/v0.1.0-alpha.1/signalpier_0.1.0~alpha1_arm64.deb",
+    "bytes": 74276,
+    "sha256": "5d4eb511f4b4bd232619b02916e0bf527227b369b20c25e37cb4617378beaea9"
+  }
+}

@@ -1,0 +1,10 @@
+[Unit]
+Description=Install a verified SignalPier application update
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/lib/signalpier/install-update.py
+TimeoutStartSec=600
+UMask=0022

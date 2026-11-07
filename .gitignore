@@ -1,0 +1,12 @@
+__pycache__/
+.venv/
+.test-tools/
+artifacts/
+dist/
+*.log
+*.img
+*.img.xz
+*.zip
+*.tar.gz
+image/work/
+node_modules/
