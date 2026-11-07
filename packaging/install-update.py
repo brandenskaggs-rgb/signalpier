@@ -28,7 +28,7 @@ def validate_manifest(manifest):
     if not re.fullmatch(r'\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?',version):raise ValueError('Invalid release version')
     deb_version=re.sub(r'-(alpha|beta|rc)\.',r'~\1',version)
     item=manifest['installer']
-    expected=f'https://github.com/brandenskaggs-rgb/signalpier/releases/download/v{version}/signalpier_{deb_version}_arm64.deb'
+    expected=f'https://github.com/brandenskaggs-rgb/signalpier/releases/download/v{version}/signalpier_{version}_arm64.deb'
     if item['url']!=expected:raise ValueError('Release URL does not match the project/version')
     if not re.fullmatch('[a-f0-9]{64}',str(item['sha256'])):raise ValueError('Invalid release checksum')
     if not isinstance(item['bytes'],int) or not 0<item['bytes']<=10_000_000:raise ValueError('Unexpected installer size')

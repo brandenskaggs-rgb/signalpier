@@ -15,6 +15,8 @@ class InstallerTests(unittest.TestCase):
     def test_manifest_binds_version_url_size_and_checksum(self):
         valid={'version':'1.0.0','installer':{'url':'https://github.com/brandenskaggs-rgb/signalpier/releases/download/v1.0.0/signalpier_1.0.0_arm64.deb','bytes':10,'sha256':'a'*64}}
         self.assertEqual(installer.validate_manifest(valid)[0],'1.0.0')
+        alpha={'version':'0.1.0-alpha.1','installer':{**valid['installer'],'url':'https://github.com/brandenskaggs-rgb/signalpier/releases/download/v0.1.0-alpha.1/signalpier_0.1.0-alpha.1_arm64.deb'}}
+        self.assertEqual(installer.validate_manifest(alpha)[0],'0.1.0~alpha1')
         for field,value in [('url','https://example.com/test.deb'),('bytes',11_000_000),('sha256','invalid')]:
             with self.subTest(field=field),self.assertRaises(ValueError):installer.validate_manifest({**valid,'installer':{**valid['installer'],field:value}})
 

@@ -14,7 +14,7 @@ Requires **64-bit Raspberry Pi OS**, Python 3.10+, and an internet connection fo
 2. Open the `.deb` with the system's software installer. If no graphical installer is available, open a terminal in Downloads and run:
 
 ```bash
-sudo apt install ./signalpier_0.1.0~alpha1_arm64.deb
+sudo apt install ./signalpier_0.1.0-alpha.1_arm64.deb
 ```
 
 3. Launch **SignalPier** from the application menu or open **http://127.0.0.1:8765** on the Pi.

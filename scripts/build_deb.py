@@ -45,4 +45,4 @@ for name in ['postinst','prerm','postrm']:
     shutil.copy2(ROOT/'packaging'/name,control/name)
 for path in [STAGE/'usr/bin/signalpier',*(control/name for name in ['postinst','prerm','postrm'])]:
     path.chmod(0o755)
-print(f'deb-stage -> signalpier_{DEB_VERSION}_arm64.deb')
+print(f'deb-stage -> signalpier_{VERSION}_arm64.deb')

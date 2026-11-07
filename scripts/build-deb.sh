@@ -9,5 +9,4 @@ find "$build_dir" -type d -exec chmod 755 {} +
 find "$build_dir" -type f -exec chmod 644 {} +
 chmod 755 "$build_dir/DEBIAN/"{postinst,prerm,postrm} "$build_dir/usr/bin/signalpier"
 version=$(tr -d '\r\n' < "$source_dir/VERSION")
-deb_version=${version/-alpha./~alpha}
-dpkg-deb --root-owner-group --build "$build_dir" "$source_dir/dist/signalpier_${deb_version}_arm64.deb"
+dpkg-deb --root-owner-group --build "$build_dir" "$source_dir/dist/signalpier_${version}_arm64.deb"
