@@ -24,7 +24,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='signalpier-appimage-') as work:
         stage=Path(work)/'SignalPier.AppDir';stage.mkdir()
         app=stage/'app';app.mkdir()
-        for name in ['app.py','updates.py','portable_update.py','desktop.py','spaceweather.py','VERSION','LICENSE','NOTICE.md']:
+        for name in ['app.py','receivers.py','updates.py','portable_update.py','desktop.py','spaceweather.py','VERSION','LICENSE','NOTICE.md']:
             shutil.copyfile(ROOT/name,app/name)
         shutil.copytree(ROOT/'static',app/'static')
         shutil.copyfile(ROOT/'packaging/AppRun',stage/'AppRun');(stage/'AppRun').chmod(0o755)

@@ -1,6 +1,7 @@
 """AppImage desktop entry: user-owned install, menu shortcut, local dashboard."""
 import argparse
 import fcntl
+import html
 import json
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ import signal
 import tempfile
 import threading
 import webbrowser
+import traceback
 
 def main():
     parser=argparse.ArgumentParser()
@@ -63,4 +65,17 @@ def main():
         server.server_close()
         lock.close()
 
-if __name__=='__main__': main()
+if __name__=='__main__':
+    try: main()
+    except Exception:
+        detail=traceback.format_exc()
+        print(detail,file=os.sys.stderr)
+        try:
+            home=Path(os.environ.get('XDG_DATA_HOME',Path.home()/'.local/share'))/'signalpier'
+            home.mkdir(parents=True,exist_ok=True)
+            (home/'startup-error.log').write_text(detail)
+            page=home/'startup-error.html'
+            page.write_text('<!doctype html><meta charset="utf-8"><title>SignalPier could not start</title><style>body{font:16px system-ui;max-width:850px;margin:50px auto;padding:20px;color:#172a3a}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f0f3f5;padding:20px}</style><h1>SignalPier could not start</h1><p>Check that this Pi runs 64-bit Raspberry Pi OS Bookworm or newer and has free disk space. Try the current AppImage from the website.</p><p>The details below are saved locally in startup-error.log. Nothing has been sent online.</p><pre>'+html.escape(detail)+'</pre>')
+            if '--no-browser' not in os.sys.argv: webbrowser.open(page.as_uri())
+        except Exception: pass
+        raise SystemExit(1)

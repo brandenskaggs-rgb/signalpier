@@ -1,6 +1,6 @@
 {
   "name": "signalpier-dev",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "private": true,
   "description": "Development checks only; Node.js is not required on the Pi",
   "scripts": {"test": "node --test tests/*.test.cjs", "test:browser": "node tests/browser.cjs"},

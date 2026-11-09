@@ -12,6 +12,7 @@
     <div class="intro"><div><p class="eyebrow">THE RECEIVER DESK</p><h1>Find a signal.<br><span>See what it carries.</span></h1></div><p class="intro-copy">Sweep a band, inspect supported sensor packets, and experiment with authenticated encryption. Start in demo mode; connect a receiver when you're ready.</p></div>
     <nav aria-label="Workbench sections"><button class="tab active" data-panel="receiver" aria-selected="true">Spectrum</button><button class="tab" data-panel="hamclock" aria-selected="false">Station clock</button><button class="tab" data-panel="encryption" aria-selected="false">Encryption lab</button><button class="tab" data-panel="projects" aria-selected="false">Settings</button></nav>
     <section id="receiver" class="panel">
+      <div class="receiver-connection" aria-labelledby="receiver-heading"><div><h2 id="receiver-heading">Receiver connection</h2><p id="receiver-message" role="status">Checking for connected RTL-SDR devices…</p><p class="help" id="receiver-test-result">Demo mode works without a receiver.</p></div><div class="receiver-actions"><label>Connected receiver<select id="detected-receiver"><option value="">Looking for receivers…</option></select></label><div class="button-row"><button id="refresh-receivers" type="button">Refresh devices</button><button id="test-receiver" type="button" disabled>Test connection</button></div></div></div>
       <div class="desk">
         <aside class="controls"><div class="section-heading"><h2>Receiver</h2><span class="tiny">RX ONLY</span></div>
           <form id="capture-form">

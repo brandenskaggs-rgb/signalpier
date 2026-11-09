@@ -102,6 +102,17 @@ class ApiTests(unittest.TestCase):
         with urlopen(self.base+'/api/status') as response:
             self.assertIn('token',json.load(response))
 
+    def test_receiver_routes_require_token_for_probe_and_return_discovery(self):
+        with patch('receivers.inspect_receiver',return_value={'status':'not_connected','message':'Connect a receiver','devices':[]}):
+            with urlopen(self.base+'/api/receivers?refresh=1') as response:
+                self.assertEqual(json.load(response)['status'],'not_connected')
+        with self.assertRaises(HTTPError) as caught:
+            urlopen(Request(self.base+'/api/receivers/test',data=b'{"device":"0"}'))
+        self.assertEqual(caught.exception.code,403);caught.exception.close()
+        with patch('app.inspect_receiver',return_value={'status':'ready','message':'Ready','devices':[]}):
+            request=Request(self.base+'/api/receivers/test',data=b'{"device":"0"}',headers={'X-Workbench-Token':self.server.token})
+            with urlopen(request) as response: self.assertEqual(json.load(response)['status'],'ready')
+
     def test_rejects_missing_token_bad_origin_and_rebinding(self):
         for headers in ({}, {'X-Workbench-Token':self.server.token,'Origin':'https://example.com'},
                         {'X-Workbench-Token':self.server.token,'Host':'attacker.example'}):

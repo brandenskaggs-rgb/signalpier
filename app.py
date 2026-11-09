@@ -20,9 +20,10 @@ from collections import deque
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from spaceweather import SpaceWeather
 from updates import UpdateChecker, installer_status, request_install
+from receivers import ReceiverMonitor, inspect_receiver
 
 STATIC = Path(__file__).parent / "static"
 MAX_BODY = 1_000_000
@@ -140,6 +141,7 @@ class Workbench:
         self.cancel = threading.Event()
         self.worker = None
         self.revision = 0
+        self.checking = False
         self.state = dict(status="idle", mode="demo", kind=None, message="Choose a receiver task.",
                           sweeps=[], events=[], peaks=[], config=None)
 
@@ -157,7 +159,7 @@ class Workbench:
     def start(self, data):
         config = settings(data)
         with self.lock:
-            if self.state["status"] == "running":
+            if self.state["status"] == "running" or self.checking:
                 raise RuntimeError("Receiver is busy. Stop the current task first.")
             self.cancel.clear()
             self.revision += 1
@@ -168,6 +170,18 @@ class Workbench:
 
     def stop(self):
         self.cancel.set()
+
+    def busy(self):
+        with self.lock: return self.checking or self.state['status']=='running'
+
+    def test_receiver(self,index):
+        with self.lock:
+            if self.checking or self.state['status']=='running':
+                raise RuntimeError('Finish or stop the capture before testing the receiver.')
+            self.checking=True
+        try: return dict(inspect_receiver(index),checked_at=time.time())
+        finally:
+            with self.lock: self.checking=False
 
     def run(self, config):
         try:
@@ -256,6 +270,7 @@ class Server(ThreadingHTTPServer):
         self.workbench = Workbench()
         self.weather = SpaceWeather()
         self.updates = UpdateChecker()
+        self.receivers = ReceiverMonitor()
         self.token = secrets.token_urlsafe(32)
 
 
@@ -282,13 +297,17 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(403, {"error": "Use localhost or an SSH tunnel."})
         path = urlparse(self.path).path
         if path == "/api/status":
-            from urllib.parse import parse_qs
             revision = parse_qs(urlparse(self.path).query).get('revision', [''])[0]
             since = int(revision) if revision.isdigit() else None
             return self.reply(200, dict(**self.server.workbench.snapshot(since), token=self.server.token,
                               platform=platform.machine(), portable=bool(os.environ.get('SIGNALPIER_PORTABLE')), tools={name: bool(shutil.which(name)) for name in ("rtl_power", "rtl_433", "rnsd", "direwolf")}))
         if path == "/api/export":
             return self.reply(200, self.server.workbench.snapshot())
+        if path == '/api/receivers':
+            active=self.server.workbench.busy()
+            force=parse_qs(urlparse(self.path).query).get('refresh')==['1']
+            info=self.server.receivers.peek() if active else self.server.receivers.scan(force)
+            return self.reply(200,dict(info,active=active))
         if path == "/api/spaceweather":
             return self.reply(200, self.server.weather.get())
         if path == "/api/update":
@@ -318,6 +337,13 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length) or b"{}")
             if not isinstance(data, dict):
                 raise ValueError("Expected a JSON object.")
+            if self.path == '/api/receivers/test':
+                if installer_status().get('status') in ('queued','installing'):
+                    raise RuntimeError('Wait for the update to finish before testing a receiver.')
+                index=str(data.get('device','0'))
+                if not index.isascii() or not index.isdigit() or len(index)>2:
+                    raise ValueError('Choose a receiver index from 0 to 99.')
+                return self.reply(200,self.server.workbench.test_receiver(int(index)))
             if self.path == '/api/quit' and os.environ.get('SIGNALPIER_PORTABLE'):
                 if installer_status().get('status') in ('queued','installing'):
                     raise RuntimeError('Wait for the update to finish.')
@@ -325,7 +351,7 @@ class Handler(BaseHTTPRequestHandler):
                 threading.Thread(target=self.server.shutdown,daemon=True).start()
                 return
             if self.path == '/api/usb/setup' and os.environ.get('SIGNALPIER_PORTABLE'):
-                if self.server.workbench.snapshot()['status']=='running':
+                if self.server.workbench.busy():
                     raise RuntimeError('Stop the capture first.')
                 if not shutil.which('pkexec'):
                     raise ValueError('This desktop has no administrator prompt. See the receiver setup guide.')
@@ -339,7 +365,7 @@ class Handler(BaseHTTPRequestHandler):
             elif self.path == "/api/stop":
                 self.server.workbench.stop()
             elif self.path == "/api/update/install":
-                if self.server.workbench.snapshot()['status'] == 'running':
+                if self.server.workbench.busy():
                     raise RuntimeError('Finish or stop the receiver capture before installing an update.')
                 if not self.server.updates.check().get('available'):
                     raise ValueError('No newer update is currently available.')

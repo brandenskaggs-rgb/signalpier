@@ -9,7 +9,7 @@ DEB_VERSION=VERSION.replace('-alpha.','~alpha')
 STAGE=ROOT/'dist'/'deb-stage'
 STAGE.mkdir(parents=True,exist_ok=True)
 app=STAGE/'opt'/'signalpier';app.mkdir(parents=True,exist_ok=True)
-for name in ['app.py','spaceweather.py','updates.py','portable_update.py','LICENSE','VERSION']:
+for name in ['app.py','receivers.py','spaceweather.py','updates.py','portable_update.py','LICENSE','VERSION']:
     shutil.copy2(ROOT/name,app/name)
 shutil.copytree(ROOT/'static',app/'static',dirs_exist_ok=True)
 for source,target in [

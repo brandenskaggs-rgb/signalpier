@@ -1,16 +1,17 @@
 {
-  "release": "0.1.0-alpha.2",
-  "date": "2026-11-07",
+  "release": "0.1.0-alpha.3",
+  "date": "2026-11-08",
   "status": "alpha; physical hardware acceptance pending",
   "verified": {
-    "python": "26 unit tests passed on Windows; 23 core tests previously passed in ARM64 userspace under QEMU",
+    "python": "33 Python tests passed, including receiver enumeration, connection outcomes, native-handle cleanup, timeouts, caching, and capture/test exclusion.",
     "javascript": "7 crypto and solar tests passed",
-    "browser": "Desktop/mobile website and dashboard checks passed; mocked AppImage update notice, user-started installation, reopen instruction and Quit UI passed in Microsoft Edge",
+    "browser": "Desktop/mobile dashboard tests passed, including receiver discovery, selection, permission/ready results, unplug handling, update installation controls and Quit.",
     "package": "ARM64 .deb installed in emulated Raspberry Pi OS userspace; unprivileged HTTP API and update helper registration verified",
     "services": "systemd-analyze verify passed for application and update units",
     "decoder": "ARM64 rtl_433 22.11-1 decoded a recorded Acurite-00275rm sample",
     "updater": "AppImage checksum/tamper rejection and atomic replacement unit tests passed; new AppImage installation requires quit/reopen. End-to-end update on physical Pi remains pending.",
-    "appimage": "ARM64 type-2 AppImage executed under QEMU using extract-and-run: user-owned installation, menu shortcut, bundled tool availability, HTTP API, demo capture, update support and Quit passed"
+    "appimage": "ARM64 type-2 AppImage executed under QEMU using extract-and-run: user-owned installation, menu shortcut, bundled tool availability, HTTP API, demo capture, update support and Quit passed",
+    "receiver_discovery": "ARM64 native library loading and empty-device inventory checked under QEMU. Connected-device and permission/busy outcomes are unit-tested with a simulated library; physical USB acceptance remains pending."
   },
   "fixture": {
     "url": "https://raw.githubusercontent.com/merbanan/rtl_433_tests/1aa8c29d6b9383739d1aeed495dbc5069b704392/tests/acurite/Acurite_00275rm/ext.cu8",

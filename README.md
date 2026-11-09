@@ -17,8 +17,8 @@ Requires **64-bit Raspberry Pi OS Bookworm or newer**, with its system Python 3.
 Terminal equivalent:
 
 ```bash
-chmod +x SignalPier-0.1.0-alpha.2-aarch64.AppImage
-./SignalPier-0.1.0-alpha.2-aarch64.AppImage
+chmod +x SignalPier-0.1.0-alpha.3-aarch64.AppImage
+./SignalPier-0.1.0-alpha.3-aarch64.AppImage
 ```
 
 The AppImage includes `rtl_power`, `rtl_433` and their receiver libraries. First launch copies the app to `~/.local/share/signalpier/SignalPier.AppImage`; subsequent launches use the menu shortcut. It runs as your user. Choose **Quit SignalPier** in the dashboard to stop it. If receiver access is denied, **Settings → Enable USB receiver access** requests administrator permission to add the bundled RTL-SDR USB rules; reconnect the dongle afterward.
@@ -36,6 +36,9 @@ ssh -N -L 8765:127.0.0.1:8765 YOUR_USER@YOUR_PI
 Start the AppImage on the Pi with `--no-browser`. Keep the tunnel open and browse to http://127.0.0.1:8765. The Pi handles reception; your laptop renders the interface. If the Pi's port is occupied, SignalPier prints its chosen port; adjust the tunnel accordingly.
 
 ## What works in this alpha
+
+- **Receiver setup:** automatic RTL-SDR inventory, name/serial selection, and an explicit connection test. Permission, busy, disconnected, missing-driver and timeout states explain the next step. Tests are excluded while a capture is running; discovery does not claim a receiver is ready.
+- **Startup help:** launcher exceptions are saved locally and displayed in a browser error page.
 
 - **Spectrum:** real `rtl_power` receiver adapter, waterfall, peak candidates, cancellation, JSON export.
 - **Packets:** real `rtl_433` adapter for supported sensor/device protocols.

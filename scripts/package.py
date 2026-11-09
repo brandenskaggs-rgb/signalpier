@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'dist'
 VERSION = (ROOT / 'VERSION').read_text().strip()
 ALLOWED_DIRS = ['static', 'scripts', 'systemd', 'docs', 'packaging', 'tests']
-ALLOWED_FILES = ['app.py', 'spaceweather.py', 'updates.py', 'portable_update.py', 'desktop.py', 'README.md', 'LICENSE', 'NOTICE.md', 'VERSION', 'CONTRIBUTING.md', 'SECURITY.md']
+ALLOWED_FILES = ['app.py','receivers.py', 'spaceweather.py', 'updates.py', 'portable_update.py', 'desktop.py', 'README.md', 'LICENSE', 'NOTICE.md', 'VERSION', 'CONTRIBUTING.md', 'SECURITY.md']
 
 
 def sources():

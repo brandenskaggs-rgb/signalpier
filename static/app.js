@@ -1,6 +1,7 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let token = '', state = null, lastSignature = '', activePanel = 'receiver', firstRefresh = true, appClosed = false;
+let testingReceiver=false, receiverTimer=null, receiverInventory=[];
 function sourceLabel() {
   $('source').textContent = activePanel === 'receiver' ? (state?.mode === 'hardware' ? 'HARDWARE · RECEIVED DATA' : 'DEMO · SYNTHETIC DATA') : ({hamclock:'CLOCK · CALCULATED + NOAA',encryption:'LOCAL · AES-256-GCM',projects:'STATION SETTINGS'}[activePanel]);
 }
@@ -115,7 +116,9 @@ async function refresh() {
     $('usb-setup').hidden=!state.portable;
     sourceLabel();
     $('job-status').textContent=state.status.toUpperCase();
-    const running=state.status==='running';$('start').disabled=running;$('stop').disabled=!running;
+    const running=state.status==='running';$('start').disabled=running||testingReceiver;$('stop').disabled=!running;
+    $('test-receiver').disabled=running||testingReceiver||!token||!receiverInventory.length;
+    $('detected-receiver').disabled=running||testingReceiver;
     $('export').disabled=!(state.sweeps.length||state.events.length);
     for(const input of $('capture-form').querySelectorAll('input,select'))input.disabled=running;
     const signature=JSON.stringify([state.status,state.mode,state.kind,state.config,state.sweeps.length,state.events.length,state.message]);
@@ -176,5 +179,34 @@ $('install-update').addEventListener('click',async()=>{
 $('dismiss-update').addEventListener('click',()=>{dismissedVersion=updateInfo?.latest||'';$('update-notice').hidden=true;});
 window.addEventListener('online',()=>{clearTimeout(updateTimer);updateTimer=setTimeout(checkUpdates,1000);});
 checkUpdates();
+async function refreshReceivers(force=false){
+  if(appClosed||testingReceiver)return;
+  $('refresh-receivers').disabled=true;
+  try{
+    const info=await api('/api/receivers'+(force?'?refresh=1':''));if(appClosed)return;
+    if(JSON.stringify(receiverInventory)!==JSON.stringify(info.devices||[]))$('receiver-test-result').textContent='Click Test connection to check the selected receiver.';
+    receiverInventory=info.devices||[];
+    const select=$('detected-receiver'),previous=select.value||$('device').value;
+    select.replaceChildren();
+    if(!receiverInventory.length){const option=node('option','No receiver detected');option.value='';select.append(option);}
+    for(const device of receiverInventory){const option=node('option',`${device.index} · ${device.product||device.name}${device.serial?' · '+device.serial:''}`);option.value=String(device.index);select.append(option);}
+    if(receiverInventory.some(device=>String(device.index)===previous))select.value=previous;
+    else if(receiverInventory.length){select.value=String(receiverInventory[0].index);if(state?.status!=='running')$('device').value=select.value;}
+    $('receiver-message').textContent=info.active?'Receiver in use by SignalPier. Finish the capture before testing.':info.message;
+    document.querySelector('.receiver-connection').dataset.status=info.status;
+    if(!receiverInventory.length)$('receiver-test-result').textContent='Demo mode works without a receiver.';
+    $('test-receiver').disabled=info.active||testingReceiver||!token||!receiverInventory.length;
+  }catch(error){$('receiver-message').textContent='Could not refresh receivers: '+error.message;}
+  finally{if(!appClosed){$('refresh-receivers').disabled=false;clearTimeout(receiverTimer);receiverTimer=setTimeout(refreshReceivers,15000);}}
+}
+$('refresh-receivers').addEventListener('click',()=>{$('receiver-test-result').textContent='Device list checked periodically. A connection test is separate.';refreshReceivers(true);});
+$('detected-receiver').addEventListener('change',()=>{if($('detected-receiver').value!=='')$('device').value=$('detected-receiver').value;$('receiver-test-result').textContent='Click Test connection to check this receiver.';});
+$('test-receiver').addEventListener('click',async()=>{
+  testingReceiver=true;$('test-receiver').disabled=true;$('start').disabled=true;$('receiver-test-result').textContent='Opening the receiver briefly to check access…';
+  try{const info=await api('/api/receivers/test',{device:$('detected-receiver').value});$('receiver-test-result').textContent=info.message+' Checked '+new Date(info.checked_at*1000).toLocaleTimeString()+'.';document.querySelector('.receiver-connection').dataset.status=info.status;}
+  catch(error){$('receiver-test-result').textContent=error.message;}
+  finally{testingReceiver=false;if(!appClosed){await refresh();clearTimeout(receiverTimer);receiverTimer=setTimeout(refreshReceivers,15000);}}
+});
+refreshReceivers();
 $('quit-app').addEventListener('click',async()=>{try{await api('/api/quit',{});appClosed=true;clearTimeout(updateTimer);for(const element of document.body.children)element.hidden=true;document.body.append(node('p','SignalPier is closed. You can close this window.'));}catch(error){notice(error.message,true);}});
 $('usb-setup').addEventListener('click',async()=>{const button=$('usb-setup');button.disabled=true;$('usb-status').textContent='Approve the administrator prompt to enable receiver access.';try{await api('/api/usb/setup',{});$('usb-status').textContent='Receiver access enabled. Unplug and reconnect the SDR, then try Hardware mode.';}catch(error){$('usb-status').textContent=error.message;}finally{button.disabled=false;}});

@@ -1,14 +1,14 @@
 {
-  "version": "0.1.0-alpha.2",
-  "date": "2026-11-07",
+  "version": "0.1.0-alpha.3",
+  "date": "2026-11-08",
   "appimage": {
-    "url": "https://github.com/brandenskaggs-rgb/signalpier/releases/download/v0.1.0-alpha.2/SignalPier-0.1.0-alpha.2-aarch64.AppImage",
-    "bytes": 1661448,
-    "sha256": "6e3d06fdda54cb6023c22d58ffb2dfa2e615170e2b13382b7c1e6a434b2ff497"
+    "url": "https://github.com/brandenskaggs-rgb/signalpier/releases/download/v0.1.0-alpha.3/SignalPier-0.1.0-alpha.3-aarch64.AppImage",
+    "bytes": 1665544,
+    "sha256": "ea6f3e759dcf76d4aa1cc7dc85a94a2072cb1ded02abab118fbe869e6971f6af"
   },
   "installer": {
-    "url": "https://github.com/brandenskaggs-rgb/signalpier/releases/download/v0.1.0-alpha.2/signalpier_0.1.0-alpha.2_arm64.deb",
-    "bytes": 75916,
-    "sha256": "46b62efee321c3e5b8b0a0e90687b5e984dd9cdbed2f808f45b0ccff4e97cefa"
+    "url": "https://github.com/brandenskaggs-rgb/signalpier/releases/download/v0.1.0-alpha.3/signalpier_0.1.0-alpha.3_arm64.deb",
+    "bytes": 78634,
+    "sha256": "3b9ee4fad491b4ced55f778eaca7abdcc0f9b4e26f0622044d6479b7ddca17a8"
   }
 }
