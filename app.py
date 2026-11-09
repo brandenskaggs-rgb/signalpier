@@ -211,7 +211,7 @@ class Workbench:
         # Files avoid unbounded pipe buffers; output and run time are capped below.
         with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:
             proc = subprocess.Popen(args, stdout=output, stderr=errors, stdin=subprocess.DEVNULL,
-                                    shell=False)
+                                    shell=False,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
             deadline = time.monotonic() + timeout
             try:
                 while proc.poll() is None:
@@ -300,7 +300,7 @@ class Handler(BaseHTTPRequestHandler):
             revision = parse_qs(urlparse(self.path).query).get('revision', [''])[0]
             since = int(revision) if revision.isdigit() else None
             return self.reply(200, dict(**self.server.workbench.snapshot(since), token=self.server.token,
-                              platform=platform.machine(), portable=bool(os.environ.get('SIGNALPIER_PORTABLE')), tools={name: bool(shutil.which(name)) for name in ("rtl_power", "rtl_433", "rnsd", "direwolf")}))
+                              platform=platform.machine(), windows=bool(os.environ.get('SIGNALPIER_WINDOWS')), portable=bool(os.environ.get('SIGNALPIER_PORTABLE') or os.environ.get('SIGNALPIER_WINDOWS')), tools={name: bool(shutil.which(name)) for name in ("rtl_power", "rtl_433", "rnsd", "direwolf")}))
         if path == "/api/export":
             return self.reply(200, self.server.workbench.snapshot())
         if path == '/api/receivers':
@@ -337,6 +337,8 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length) or b"{}")
             if not isinstance(data, dict):
                 raise ValueError("Expected a JSON object.")
+            if self.path == '/api/update/check':
+                return self.reply(200,dict(self.server.updates.check(force=True),installer=installer_status()))
             if self.path == '/api/receivers/test':
                 if installer_status().get('status') in ('queued','installing'):
                     raise RuntimeError('Wait for the update to finish before testing a receiver.')
@@ -344,7 +346,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not index.isascii() or not index.isdigit() or len(index)>2:
                     raise ValueError('Choose a receiver index from 0 to 99.')
                 return self.reply(200,self.server.workbench.test_receiver(int(index)))
-            if self.path == '/api/quit' and os.environ.get('SIGNALPIER_PORTABLE'):
+            if self.path == '/api/quit' and (os.environ.get('SIGNALPIER_PORTABLE') or os.environ.get('SIGNALPIER_WINDOWS')):
                 if installer_status().get('status') in ('queued','installing'):
                     raise RuntimeError('Wait for the update to finish.')
                 self.reply(200, {'ok':True})

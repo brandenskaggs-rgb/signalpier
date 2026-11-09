@@ -110,10 +110,12 @@ async function refresh() {
     const update=await api('/api/status'+(state ? '?revision='+state.revision : ''));
     if(appClosed)return;
     state=update.unchanged ? {...state,...update} : update;token=state.token;
-    if(firstRefresh && state.config){for(const [key,value] of Object.entries(state.config)){if($(key))$(key).value=value;}$('kind').dispatchEvent(new Event('change'));}firstRefresh=false;
+    if(firstRefresh && state.config){for(const [key,value] of Object.entries(state.config)){if($(key))$(key).value=value;}if($('detected-receiver').value!=='')$('device').value=$('detected-receiver').value;$('kind').dispatchEvent(new Event('change'));}firstRefresh=false;
     $('connection').textContent=`Local station · ${state.platform}`;
     $('quit-app').hidden=!state.portable;
     $('usb-setup').hidden=!state.portable;
+    $('usb-setup').textContent=state.windows?'Windows USB setup':'Enable USB receiver access';
+    if(state.windows)document.querySelector('.brand small').textContent='Radio workbench / Windows';
     sourceLabel();
     $('job-status').textContent=state.status.toUpperCase();
     const running=state.status==='running';$('start').disabled=running||testingReceiver;$('stop').disabled=!running;
@@ -155,28 +157,40 @@ $('save-envelope').addEventListener('click',()=>{
 try{const p=JSON.parse(localStorage.getItem('signalpier-preferences')||'null');if(p&&Number.isInteger(p.device)&&p.device>=0&&p.device<=99&&Number.isInteger(p.duration)&&p.duration>=2&&p.duration<=60){$('default-device').value=p.device;$('default-duration').value=p.duration;$('device').value=p.device;$('duration').value=p.duration;}}catch{}
 $('preferences-form').addEventListener('submit',event=>{event.preventDefault();const p={device:Number($('default-device').value),duration:Number($('default-duration').value)};try{localStorage.setItem('signalpier-preferences',JSON.stringify(p));if(state?.status!=='running'){$('device').value=p.device;$('duration').value=p.duration;}$('preferences-message').textContent='Defaults saved for this browser.';}catch{$('preferences-message').textContent='Browser storage is unavailable.';}});
 
-let updateInfo=null, installingUpdate=false, updateTimer=null, dismissedVersion='';
-async function checkUpdates(){
+let updateInfo=null, installingUpdate=false, updateTimer=null, dismissedVersion='', notifiedVersion='', updatingFromVersion='';
+async function checkUpdates(force=false){
   if(appClosed)return;
   try{
-    const info=await api('/api/update');updateInfo=info;
+    const info=await api(force?'/api/update/check':'/api/update',force?{}:undefined);updateInfo=info;
     if(appClosed)return;
     const status=info.installer?.status;
+    if(installingUpdate&&updatingFromVersion&&info.current!==updatingFromVersion){location.reload();return;}
+    if(force)dismissedVersion='';
+    $('update-check-status').textContent=info.online?(info.available?'Version '+info.latest+' is available.':'You are up to date: '+info.current+'.'):'Could not check for updates. You can keep using SignalPier offline.';
     if(status==='complete' && info.installer.restart_required){installingUpdate=false;$('update-notice').hidden=false;$('update-title').textContent='Update installed';$('update-message').textContent=info.installer.message;$('install-update').disabled=true;return;}
     if(installingUpdate && status==='complete'){location.reload();return;}
     if(status==='queued'||status==='installing')installingUpdate=true;
     if(status==='error'){installingUpdate=false;$('update-notice').hidden=false;$('update-title').textContent='Update could not finish';$('update-message').textContent=info.installer.message;$('install-update').disabled=false;}
     else if(installingUpdate){$('update-notice').hidden=false;$('update-title').textContent='Installing SignalPier update';$('update-message').textContent=info.installer.message||'Starting update…';$('install-update').disabled=true;}
-    else if(info.available && info.latest!==dismissedVersion){$('update-notice').hidden=false;$('update-title').textContent='SignalPier '+info.latest+' is available';$('update-message').textContent=info.installer?.supported?'Install when ready. Finish any capture first.':'Automatic installation is available with the Pi app installer.';$('install-update').disabled=!info.installer?.supported;}
-  }catch{if(installingUpdate)$('update-message').textContent='The app is restarting. Reconnecting…';}
+    else if(info.available && info.latest!==dismissedVersion){$('update-notice').hidden=false;$('update-title').textContent='SignalPier '+info.latest+' is available';$('update-message').textContent=info.installer?.supported?'Install when ready. Finish any capture first.':'Automatic installation is available in packaged SignalPier releases.';$('install-update').disabled=!info.installer?.supported;}
+    else if(!info.available&&!installingUpdate&&status!=='error'){$('update-notice').hidden=true;if($('update-dialog').open)$('update-dialog').close();}
+    if(info.available && !installingUpdate && status!=='complete' && (force||notifiedVersion!==info.latest)){
+      notifiedVersion=info.latest;$('update-dialog-title').textContent='A new SignalPier update is ready';$('update-dialog-message').textContent='Version '+info.latest+' is available. You have '+info.current+'.';$('update-dialog-install').disabled=!info.installer?.supported;
+      if(!$('update-dialog').open)$('update-dialog').showModal();
+    }
+  }catch{if(installingUpdate)$('update-message').textContent='The app is restarting. Reconnecting…';else $('update-check-status').textContent='Could not check for updates. You can keep using SignalPier offline.';}
   clearTimeout(updateTimer);updateTimer=setTimeout(checkUpdates,installingUpdate?2500:1800000);
 }
 $('install-update').addEventListener('click',async()=>{
+  updatingFromVersion=updateInfo?.current||'';
   $('install-update').disabled=true;
   try{await api('/api/update/install',{});installingUpdate=true;$('update-title').textContent='Installing SignalPier update';$('update-message').textContent='Checking and downloading the update…';clearTimeout(updateTimer);updateTimer=setTimeout(checkUpdates,1500);}
   catch(error){$('update-message').textContent=error.message;$('install-update').disabled=false;}
 });
 $('dismiss-update').addEventListener('click',()=>{dismissedVersion=updateInfo?.latest||'';$('update-notice').hidden=true;});
+$('update-dialog-later').addEventListener('click',()=>{$('update-dialog').close();});
+$('update-dialog-install').addEventListener('click',()=>{$('update-dialog').close();$('install-update').click();});
+$('check-updates').addEventListener('click',async()=>{const button=$('check-updates');button.disabled=true;$('update-check-status').textContent='Checking for updates…';try{await checkUpdates(true);}finally{button.disabled=false;}});
 window.addEventListener('online',()=>{clearTimeout(updateTimer);updateTimer=setTimeout(checkUpdates,1000);});
 checkUpdates();
 async function refreshReceivers(force=false){
@@ -209,4 +223,4 @@ $('test-receiver').addEventListener('click',async()=>{
 });
 refreshReceivers();
 $('quit-app').addEventListener('click',async()=>{try{await api('/api/quit',{});appClosed=true;clearTimeout(updateTimer);for(const element of document.body.children)element.hidden=true;document.body.append(node('p','SignalPier is closed. You can close this window.'));}catch(error){notice(error.message,true);}});
-$('usb-setup').addEventListener('click',async()=>{const button=$('usb-setup');button.disabled=true;$('usb-status').textContent='Approve the administrator prompt to enable receiver access.';try{await api('/api/usb/setup',{});$('usb-status').textContent='Receiver access enabled. Unplug and reconnect the SDR, then try Hardware mode.';}catch(error){$('usb-status').textContent=error.message;}finally{button.disabled=false;}});
+$('usb-setup').addEventListener('click',async()=>{if(state?.windows){window.open('https://brandenskaggs-rgb.github.io/signalpier/guide.html#windows-receiver','_blank','noopener');return;}const button=$('usb-setup');button.disabled=true;$('usb-status').textContent='Approve the administrator prompt to enable receiver access.';try{await api('/api/usb/setup',{});$('usb-status').textContent='Receiver access enabled. Unplug and reconnect the SDR, then try Hardware mode.';}catch(error){$('usb-status').textContent=error.message;}finally{button.disabled=false;}});

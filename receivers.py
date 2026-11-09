@@ -8,6 +8,7 @@ import subprocess
 import sys
 import threading
 import time
+import tempfile
 
 MESSAGES={
  'detected':'Receiver detected. Test the connection before your first hardware capture.',
@@ -22,11 +23,21 @@ MESSAGES={
 }
 
 def result(status,**extra):
-    return dict(status=status,message=MESSAGES[status],devices=[],**extra)
+    message=MESSAGES[status]
+    if os.environ.get('SIGNALPIER_WINDOWS'):
+        message={'not_connected':'No supported RTL-SDR found. Connect it to this computer. If needed, follow Windows USB setup in Settings.',
+                 'driver_missing':'The bundled RTL-SDR library could not load. Reinstall SignalPier for Windows.',
+                 'permission_denied':'USB access was denied. Follow Windows USB setup in Settings, then reconnect your SDR.',
+                 'timeout':'The receiver did not respond in time. Reconnect it and check its USB connection.'}.get(status,message)
+    return dict(status=status,message=message,devices=[],**extra)
 
 def load_library():
     bundled=Path(__file__).resolve().parent.parent/'usr/lib/aarch64-linux-gnu'
-    if os.environ.get('SIGNALPIER_PORTABLE'):
+    if os.environ.get('SIGNALPIER_WINDOWS'):
+        folder=Path(__file__).resolve().parent/'tools'
+        with os.add_dll_directory(str(folder)):
+            lib=ctypes.CDLL(str(folder/'rtlsdr.dll'))
+    elif os.environ.get('SIGNALPIER_PORTABLE'):
         ctypes.CDLL(str(bundled/'libusb-1.0.so.0'),mode=ctypes.RTLD_GLOBAL)
         lib=ctypes.CDLL(str(bundled/'librtlsdr.so.0'))
     else:
@@ -65,12 +76,23 @@ def inspect_native(index=None):
     return response
 
 def inspect_receiver(index=None):
+    if index is not None and (type(index) is not int or not 0<=index<=99): raise ValueError('Choose a receiver index from 0 to 99.')
+    if getattr(sys,'frozen',False) and os.name=='nt':
+        with tempfile.TemporaryDirectory(prefix='signalpier-probe-') as work:
+            output=Path(work)/'result.json'
+            args=[sys.executable,'--receiver-probe',str(output)]+([str(index)] if index is not None else [])
+            try:
+                process=subprocess.run(args,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=10,creationflags=subprocess.CREATE_NO_WINDOW)
+                if process.returncode: return result('error')
+                return json.loads(output.read_text(encoding='utf-8'))
+            except subprocess.TimeoutExpired: return result('timeout')
+            except (OSError,ValueError): return result('error')
     args=[sys.executable,str(Path(__file__).resolve()),'--native']
     if index is not None:
         if type(index) is not int or not 0<=index<=99: raise ValueError('Choose a receiver index from 0 to 99.')
         args.append(str(index))
     try:
-        process=subprocess.run(args,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=8,check=False)
+        process=subprocess.run(args,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=8,check=False,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
         lines=process.stdout.decode('utf-8',errors='replace').splitlines()
         data=json.loads(lines[-1])
         if process.returncode or data.get('status') not in MESSAGES: return result('error')

@@ -1,10 +1,18 @@
 # SignalPier
 
-**A small radio workbench app for Raspberry Pi 3.** Spectrum surveys, supported sensor decoding, a station clock, and a local encryption lab in one clean browser dashboard.
+**A small radio workbench app for Windows 10/11 and Raspberry Pi 3.** Spectrum surveys, supported sensor decoding, a station clock, and a local encryption lab in one clean browser dashboard.
 
 [Download the app](https://brandenskaggs-rgb.github.io/signalpier/downloads.html) · [Website](https://brandenskaggs-rgb.github.io/signalpier/) · [Setup guide](https://brandenskaggs-rgb.github.io/signalpier/guide.html)
 
-SignalPier is **an application, not an operating system**. Install it on your existing Raspberry Pi OS. No reflashing is required.
+SignalPier installs on your existing Windows or 64-bit Raspberry Pi OS system.
+
+## Install on Windows 10/11
+
+Download **SignalPier-0.1.0-alpha.4-windows-x64-Setup.exe**, run setup, and launch SignalPier from the Start menu. Python and receiver tools are bundled. Windows x64 is supported; the build is tested on Windows 11, with separate Windows 10 testing pending. This alpha installer is unsigned.
+
+If your RTL-SDR needs a USB driver, follow the website's Windows USB setup guide to install WinUSB for the SDR's Bulk-In Interface 0. The application does not automatically replace device drivers. Uninstall through Windows Settings → Apps.
+
+On both platforms, a newer release triggers an **Update available** pop-up with **Install update** and **Later**. Settings → **Check for updates** checks immediately. The Windows updater verifies the setup download, closes the current app, installs into the same folder, and reopens SignalPier. Updates are never installed automatically.
 
 ## Install on Raspberry Pi 3
 
@@ -17,8 +25,8 @@ Requires **64-bit Raspberry Pi OS Bookworm or newer**, with its system Python 3.
 Terminal equivalent:
 
 ```bash
-chmod +x SignalPier-0.1.0-alpha.3-aarch64.AppImage
-./SignalPier-0.1.0-alpha.3-aarch64.AppImage
+chmod +x SignalPier-0.1.0-alpha.4-aarch64.AppImage
+./SignalPier-0.1.0-alpha.4-aarch64.AppImage
 ```
 
 The AppImage includes `rtl_power`, `rtl_433` and their receiver libraries. First launch copies the app to `~/.local/share/signalpier/SignalPier.AppImage`; subsequent launches use the menu shortcut. It runs as your user. Choose **Quit SignalPier** in the dashboard to stop it. If receiver access is denied, **Settings → Enable USB receiver access** requests administrator permission to add the bundled RTL-SDR USB rules; reconnect the dongle afterward.

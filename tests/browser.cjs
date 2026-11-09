@@ -10,7 +10,8 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
       await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),name+' mobile overflow');await page.setViewportSize({width:1440,height:1000});
     }
     await page.goto('http://127.0.0.1:8780/');await page.screenshot({path:'artifacts/website-desktop.png',fullPage:true});
-    assert.match(await page.locator('.hero .primary').getAttribute('href'),/aarch64\.AppImage$/);
+    assert.match(await page.locator('.hero [data-download=pi]').getAttribute('href'),/aarch64\.AppImage$/);
+    assert.match(await page.locator('.hero [data-download=windows]').getAttribute('href'),/windows-x64-Setup\.exe$/);
     await page.locator('[data-band="145.500"]').click();assert.match(await page.locator('#frequency').innerText(),/145.500/);
     await page.goto('http://127.0.0.1:8766');await page.waitForFunction(()=>document.getElementById('connection').textContent.includes('Local station'));
     await page.locator('#duration').fill('10');await page.locator('#start').click();await page.waitForFunction(()=>document.getElementById('job-status').textContent==='COMPLETE');assert.ok(await page.locator('#results tbody tr').count()>0);

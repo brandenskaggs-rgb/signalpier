@@ -1,9 +1,9 @@
 {
-  "release": "0.1.0-alpha.3",
-  "date": "2026-11-08",
+  "release": "0.1.0-alpha.4",
+  "date": "2026-11-09",
   "status": "alpha; physical hardware acceptance pending",
   "verified": {
-    "python": "33 Python tests passed, including receiver enumeration, connection outcomes, native-handle cleanup, timeouts, caching, and capture/test exclusion.",
+    "python": "37 unit tests passed, including platform-specific update selection, manual rechecks, verified setup execution and tamper rejection.",
     "javascript": "7 crypto and solar tests passed",
     "browser": "Desktop/mobile dashboard tests passed, including receiver discovery, selection, permission/ready results, unplug handling, update installation controls and Quit.",
     "package": "ARM64 .deb installed in emulated Raspberry Pi OS userspace; unprivileged HTTP API and update helper registration verified",
@@ -11,7 +11,9 @@
     "decoder": "ARM64 rtl_433 22.11-1 decoded a recorded Acurite-00275rm sample",
     "updater": "AppImage checksum/tamper rejection and atomic replacement unit tests passed; new AppImage installation requires quit/reopen. End-to-end update on physical Pi remains pending.",
     "appimage": "ARM64 type-2 AppImage executed under QEMU using extract-and-run: user-owned installation, menu shortcut, bundled tool availability, HTTP API, demo capture, update support and Quit passed",
-    "receiver_discovery": "ARM64 native library loading and empty-device inventory checked under QEMU. Connected-device and permission/busy outcomes are unit-tested with a simulated library; physical USB acceptance remains pending."
+    "receiver_discovery": "ARM64 native library loading and empty-device inventory checked under QEMU. Connected-device and permission/busy outcomes are unit-tested with a simulated library; physical USB acceptance remains pending.",
+    "windows": "Windows 11 x64 frozen app launch, native receiver-library loading, no-device discovery, demo capture, Start menu installation, and uninstaller registration passed. Bundled Windows rtl_433 decoded the pinned Acurite fixture.",
+    "windows_updater": "Real installer replacement and automatic app relaunch passed using a simulated newer manifest pointing to the current build. Newer/same/offline detection, Later, manual recheck and explicit Install pop-up behavior passed browser tests. No physical radio was attached."
   },
   "fixture": {
     "url": "https://raw.githubusercontent.com/merbanan/rtl_433_tests/1aa8c29d6b9383739d1aeed495dbc5069b704392/tests/acurite/Acurite_00275rm/ext.cu8",
@@ -23,7 +25,8 @@
     "USB receiver detection and over-the-air reception on physical Pi 3",
     "Thermal, power and sustained RF performance",
     "End-to-end update installation on a running physical Pi",
-    "Default FUSE-mounted AppImage launch on physical Pi desktop; emulation tests use extract-and-run"
+    "Default FUSE-mounted AppImage launch on physical Pi desktop; emulation tests use extract-and-run",
+    "Separate Windows 10 machine acceptance and physical Windows USB receiver capture"
   ],
   "not_included": [
     "Radio transmission",

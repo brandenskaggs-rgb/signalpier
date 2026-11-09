@@ -2,11 +2,13 @@
 
 SignalPier's own application, packaging, documentation, and website are MIT-licensed.
 
+The Windows setup includes Python 3.14 and a PyInstaller bootloader (GPL with the PyInstaller exception), RTL-SDR Blog V1.4.0, rtl_433 25.12, libusb 1.0.29 and the upstream SoapySDR library used by that decoder. Receiver licenses remain GPL/LGPL/Boost as applicable; the app does not include Soapy device plugins. Component sources and upstream build instructions are supplied in the same release as `SignalPier-0.1.0-alpha.4-windows-sources.zip`. Python and receiver notices are installed under `_internal/licenses`. Microsoft Visual C++ runtime components retain their Microsoft license. Inno Setup builds the Windows installer and retains its embedded notices.
+
 The bundled `static/world.json` is Natural Earth 1:110m land geometry, public domain:
 https://www.naturalearthdata.com/about/terms-of-use/
 Source: https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson
 
-The AppImage bundles Debian Bookworm ARM64 receiver tools and libraries: rtl-sdr 0.6.0-4 (GPL-2.0+), rtl_433 22.11-1 (GPL-2.0+), libusb 1.0.26-1 (LGPL-2.1+), and SoapySDR 0.8.1-3 (Boost Software License). Their original copyright files and license texts are included under the AppImage's `usr/share/doc`. Corresponding source archives and Debian packaging are provided in the same GitHub release as `SignalPier-0.1.0-alpha.3-third-party-sources.tar.gz`. These components are not relicensed under SignalPier's MIT license.
+The AppImage bundles Debian Bookworm ARM64 receiver tools and libraries: rtl-sdr 0.6.0-4 (GPL-2.0+), rtl_433 22.11-1 (GPL-2.0+), libusb 1.0.26-1 (LGPL-2.1+), and SoapySDR 0.8.1-3 (Boost Software License). Their original copyright files and license texts are included under the AppImage's `usr/share/doc`. Corresponding source archives and Debian packaging are provided in the same GitHub release as `SignalPier-0.1.0-alpha.4-third-party-sources.tar.gz`. These components are not relicensed under SignalPier's MIT license.
 
 The type-2 AppImage runtime comes from AppImage/type2-runtime tag 20251108. Its MIT license and linked-library notices are included in the AppImage. Runtime source, build scripts, the patched libfuse source dependency, and squashfuse source are included in the third-party source archive. The runtime links musl, libfuse, squashfuse, zstd and zlib; their original licenses apply.
 

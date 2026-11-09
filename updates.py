@@ -14,6 +14,9 @@ STATE=Path('/var/lib/signalpier')
 
 
 def installer_status():
+    if os.environ.get('SIGNALPIER_WINDOWS'):
+        from windows_update import status
+        return status()
     if os.environ.get('SIGNALPIER_PORTABLE'):
         from portable_update import status
         return status()
@@ -28,6 +31,9 @@ def installer_status():
 
 
 def request_install():
+    if os.environ.get('SIGNALPIER_WINDOWS'):
+        from windows_update import request_install as windows_install
+        return windows_install()
     if os.environ.get('SIGNALPIER_PORTABLE'):
         from portable_update import request_install as portable_install
         return portable_install()
@@ -54,9 +60,9 @@ class UpdateChecker:
         self.next_check=0
         self.cached={'current':VERSION,'available':False,'online':False}
 
-    def check(self):
+    def check(self,force=False):
         with self.lock:
-            if time.monotonic()<self.next_check:
+            if not force and time.monotonic()<self.next_check:
                 return self.cached
             try:
                 with urlopen(Request(FEED,headers={'User-Agent':'SignalPier/'+VERSION}),timeout=5) as response:
@@ -64,10 +70,11 @@ class UpdateChecker:
                 if len(data)>100000: raise ValueError('Update response too large')
                 manifest=json.loads(data)
                 latest=str(manifest['version'])
-                item=manifest['appimage' if os.environ.get('SIGNALPIER_PORTABLE') else 'installer']
+                kind='windows' if os.environ.get('SIGNALPIER_WINDOWS') else 'appimage' if os.environ.get('SIGNALPIER_PORTABLE') else 'installer'
+                item=manifest[kind]
                 url=str(item['url'])
                 digest=str(item['sha256'])
-                suffix='-aarch64.AppImage' if os.environ.get('SIGNALPIER_PORTABLE') else '_arm64.deb'
+                suffix={'windows':'-windows-x64-Setup.exe','appimage':'-aarch64.AppImage','installer':'_arm64.deb'}[kind]
                 if not url.startswith(DOWNLOAD_PREFIX) or not url.endswith(suffix):
                     raise ValueError('Unsupported download URL')
                 if not re.fullmatch('[a-f0-9]{64}',digest): raise ValueError('Invalid checksum')

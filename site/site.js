@@ -16,7 +16,7 @@ if(scope){
 }
 async function release(){
   const link=document.getElementById('download-installer');if(!link)return;
-  try{const response=await fetch('release.json');if(!response.ok)throw new Error();const data=await response.json();const item=data.appimage;link.href=item.url;document.getElementById('installer-size').textContent=(item.bytes/1048576).toFixed(1)+' MB download';document.getElementById('installer-sha').textContent=item.sha256;document.querySelectorAll('[data-version]').forEach(e=>e.textContent=data.version);document.getElementById('release-date').textContent=data.date;}
+  try{const response=await fetch('release.json');if(!response.ok)throw new Error();const data=await response.json();const item=data.appimage;link.href=item.url;document.getElementById('installer-size').textContent=(item.bytes/1048576).toFixed(1)+' MB download';document.getElementById('installer-sha').textContent=item.sha256;document.querySelectorAll('[data-version]').forEach(e=>e.textContent=data.version);document.getElementById('release-date').textContent=data.date;const win=data.windows;if(win){document.getElementById('download-windows').href=win.url;document.getElementById('windows-size').textContent=(win.bytes/1048576).toFixed(1)+' MB download';document.getElementById('windows-sha').textContent=win.sha256;}}
   catch{document.getElementById('release-message').textContent='Alpha app installer. Check GitHub Releases for checksums and validation details.';}
 }
 release();
